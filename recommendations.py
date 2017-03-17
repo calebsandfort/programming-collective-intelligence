@@ -82,23 +82,29 @@ def topMatches(prefs, person, n=5, similarity=sim_pearson):
 
 # Gets recommendations for a person by using a weighted average
 # of every other user's rankings
-def getRecommendations(prefs, person, similarity=sim_pearson):
+def getRecommendations(prefs, person, similarity=sim_pearson, n=10):
     totals = {}
     simSums = {}
-    for other in prefs:
-        # don't compare me to myself
-        if other == person: continue
-        sim = similarity(prefs, person, other)
+
+    scores = [(similarity(prefs, person, other), other)
+              for other in prefs if other != person]
+    scores.sort()
+    scores.reverse()
+    top_scores = scores[0:n]
+
+    for score, key in top_scores:
+        if key == person: continue
+        sim = score
 
         # ignore scores of zero or lower
         if sim <= 0: continue
-        for item in prefs[other]:
+        for item in prefs[key]:
 
             # only score movies I haven't seen yet
             if item not in prefs[person] or prefs[person][item] == 0:
                 # Similarity * Score
                 totals.setdefault(item, 0)
-                totals[item] += prefs[other][item] * sim
+                totals[item] += prefs[key][item] * sim
                 # Sum of similarities
                 simSums.setdefault(item, 0)
                 simSums[item] += sim
@@ -175,13 +181,21 @@ def readfile(filename):
     colnames = lines[0].strip().split(',')[1:]
     rownames = []
     data = []
+    examples = {}
     for line in lines[1:]:
         p = line.strip().split(',')
         # First column in each row is the rowname
         rownames.append(p[0])
         # The data for this row is the remainder of the row
         data.append([float(x) for x in p[1:]])
-    return rownames, colnames, data
+
+    for i in range(0, len(data)):
+        key = rownames[i]
+        examples.setdefault(key, {})
+        for j in range(0, len(colnames)):
+            examples[key][colnames[j]] = data[i][j]
+
+    return rownames, colnames, data, examples
 
 def loadMovieLens(path='/data/movielens'):
     # Get movie titles
