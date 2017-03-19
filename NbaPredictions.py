@@ -7,20 +7,21 @@ def recommend():
 
     trainingGameExamples.update(todaysGameExamples)
 
-    delete = True
+    print("ClearGameRecommendations")
+    requests.get("http://localhost/guerillalogisticsapi/MachineLearning/ClearGameRecommendations")
 
     for key, dict in todaysGameExamples.items():
         predictions = rec.getRecommendations(trainingGameExamples, key)
 
         payload = {}
         payload["key"] = key
-        payload["delete"] = delete
 
         for pair in predictions:
             payload[pair[1]] = pair[0]
 
-        r = requests.get("http://dev-csandfort.gwi.com/guerillalogisticsapi/MachineLearning/SaveGameRecommendation", params=payload)
-        print(r.url)
-        delete = False
+        r = requests.get("http://localhost/guerillalogisticsapi/MachineLearning/SaveGameRecommendation", params=payload)
+        print(key)
 
+    print("AdjustGameRecommendations")
+    requests.get("http://localhost/guerillalogisticsapi/MachineLearning/AdjustGameRecommendations")
     # [print("%20s %s" % (key, dict)) for key, dict in results.items()]
